@@ -165,9 +165,8 @@ const app = http.createServer(function(request, response) {
     });
     request.on("end", function() {
       const post = qs.parse(body);
-      const id = post.id;
-      const filteredId = path.parse(id).base;
-      fs.unlink(`data/${filteredId}`, function(error) {
+      db.query("DELETE FROM topic WHERE id = ?", [post.id], (err, result) => {
+        if (err) throw err;
         response.writeHead(302, { Location: `/` });
         response.end();
       });
