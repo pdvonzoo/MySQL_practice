@@ -67,27 +67,41 @@ const app = http.createServer(function(request, response) {
     }
   } else if (pathname === "/create") {
     db.query(`SELECT * FROM topic`, (err, topics) => {
-      const title = "Create";
-      const list = template.list(topics);
-      if (err) console.log(err);
-      const html = template.HTML(
-        title,
-        list,
-        `
-              <form action="/create_process" method="post">
-                <p><input type="text" name="title" placeholder="title"></p>
-                <p>
-                  <textarea name="description" placeholder="description"></textarea>
-                </p>
-                <p>
-                  <input type="submit">
-                </p>
-              </form>
-            `,
-        ""
-      );
-      response.writeHead(200);
-      response.end(html);
+      db.query(`SELECT * FROM author`, (err2, authors) => {
+        let tag = "";
+        let i = 0;
+        while (i < authors.length) {
+          tag += `<option value=${authors[i].id}>${authors[i].name}</options>`;
+          i++;
+        }
+
+        const title = "Create";
+        const list = template.list(topics);
+        if (err) console.log(err);
+        const html = template.HTML(
+          title,
+          list,
+          `
+                <form action="/create_process" method="post">
+                  <p><input type="text" name="title" placeholder="title"></p>
+                  <p>
+                    <textarea name="description" placeholder="description"></textarea>
+                  </p>
+                  <p>
+                    <select name='author'>
+                      ${tag}
+                    </select>
+                  </p>
+                  <p>
+                    <input type="submit">
+                  </p>
+                </form>
+              `,
+          ""
+        );
+        response.writeHead(200);
+        response.end(html);
+      });
     });
   } else if (pathname === "/create_process") {
     let body = "";
@@ -99,7 +113,7 @@ const app = http.createServer(function(request, response) {
       db.query(
         `INSERT INTO topic (title, description, created, author_id) 
         VALUES(?, ?, NOW(), ?)`,
-        [post.title, post.description, 1],
+        [post.title, post.description, post.author],
         (err2, result) => {
           if (err2) throw err2;
           response.writeHead(302, { Location: `/?id=${result.insertId}` });
